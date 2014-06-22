@@ -26,9 +26,9 @@ if (file_exists('config.php')) {
 }
 
 // Create Design Pass Client connection
-$pass = new DesignPassClient($key, $secret, $redirect, $mode, $scope);
+$pass = new DesignPassClient($api, $key, $secret, $redirect, $mode, $scope);
 if ($pass->authenticate()) {
-    wrout('Already authenticated');
+    wrout("Already authenticated : key($key), scope($scope)");
     wrout('AccessToken : ' . $pass->oauth->token->accesstoken);
 } else {
     wrout('ERROR : ' . $pass->lastError);

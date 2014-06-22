@@ -10,6 +10,7 @@
  */
 
 // App Configuration
+$api        = 'http://test.pass.iedmadrid.com/api';
 $key        = '<your-app-id>';
 $secret     = '<your-app-secret>';
 $redirect   = 'http://example/oauth/return';

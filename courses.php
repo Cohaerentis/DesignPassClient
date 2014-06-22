@@ -26,7 +26,7 @@ if (file_exists('config.php')) {
 }
 
 // Create Design Pass Client connection
-$pass = new DesignPassClient($key, $secret, $redirect, $mode, $scope);
+$pass = new DesignPassClient($api, $key, $secret, $redirect, $mode, $scope);
 if ($pass->authenticate()) {
     $response = $pass->request('course');
     if (!empty($response->courses)) {

@@ -10,9 +10,9 @@
 require_once('OAuth.php');
 
 class DesignPassClient {
-    public $api             = 'http://test.pass.iedmadrid.com/api';
-    public $authorizeurl    = 'http://test.pass.iedmadrid.com/api/oauth/authorize';
-    public $tokenurl        = 'http://test.pass.iedmadrid.com/api/oauth/token';
+    public $api             = '';
+    public $authorizeurl    = '/oauth/authorize';
+    public $tokenurl        = '/oauth/token';
     public $apiKey          = '';
     public $secretKey       = '';
     public $oauth           = null;
@@ -22,8 +22,9 @@ class DesignPassClient {
     // Mode:
     // - 'authorization_code'
     // - 'client_credentials'
-    public function __construct($key, $secret, $redirect, $mode = 'authorization_code', $scope = 'profile') {
+    public function __construct($api, $key, $secret, $redirect, $mode = 'authorization_code', $scope = 'profile') {
         // OAUTH2 Client credentials
+        $this->api = $api;
         $this->apiKey = $key;
         $this->secretKey = $secret;
         $this->oauth = new OAuth('DesignPass',
@@ -31,8 +32,8 @@ class DesignPassClient {
                                  'client_secret'    => $this->secretKey,
                                  'authtype'         => $mode,
                                  'api_base_url'     => $this->api,
-                                 'authorize_url'    => $this->authorizeurl,
-                                 'token_url'        => $this->tokenurl,
+                                 'authorize_url'    => $this->api . $this->authorizeurl,
+                                 'token_url'        => $this->api . $this->tokenurl,
                                  'scope'            => $scope,
                                  'redirect_uri'     => $redirect,
                                 ),
