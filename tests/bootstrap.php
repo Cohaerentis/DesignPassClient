@@ -2,7 +2,7 @@
 
 // require_once('PHPUnit/Runner/Version.php');
 // require_once('PHPUnit/Util/Filesystem.php'); // workaround for PHPUnit <= 3.6.11
-require_once('PHPUnit/Autoload.php');
+//require_once('PHPUnit/Autoload.php');
 require_once(dirname(__FILE__) . '/../lib/DesignPassClient.php');
 require_once(dirname(__FILE__) . '/../lib/wrlog.php');
 require_once(dirname(__FILE__) . '/RequestTestCase.php');
