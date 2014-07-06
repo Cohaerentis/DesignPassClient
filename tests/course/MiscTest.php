@@ -12,6 +12,7 @@ class MiscTest extends RequestTestCase {
         'degree'        => array('code', 'name'),
         'orgtype'       => array('code', 'name'),
         'usertype'      => array('code', 'name'),
+        'area'          => array('id', 'label', 'name'),
     );
 
     /**
@@ -124,6 +125,19 @@ class MiscTest extends RequestTestCase {
 
         // B. There are several items, with these fields
         $this->assertArrayFields(self::$fields['usertype'], (array) $response->usertypes);
+    }
+
+    /**
+     * GET /misc/area
+     */
+    public function testAreaList() {
+        $response = $this->readRequest('misc/area');
+
+        // A. There are items
+        $this->assertObjectHasAttribute('areas', $response);
+
+        // B. There are several items, with these fields
+        $this->assertArrayFields(self::$fields['area'], (array) $response->areas);
     }
 
 }

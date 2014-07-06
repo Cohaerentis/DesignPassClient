@@ -7,7 +7,7 @@ class OrgTest extends RequestTestCase {
         'org' => array(
             'basic'   => array('id', 'type', 'email', 'name', 'logo'),
             'details' => array('address', 'city', 'postal', 'province', 'country', 'phone',
-                               'mobile', 'altphone', 'photo', 'socials', 'websites', 'tags',
+                               'mobile', 'altphone', 'photo', 'socials', 'websites', 'tags', 'areas'
             ),
         ),
 
