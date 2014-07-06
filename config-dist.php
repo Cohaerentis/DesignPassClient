@@ -15,4 +15,3 @@ $key        = '<your-app-id>';
 $secret     = '<your-app-secret>';
 $redirect   = 'http://example/oauth/return';
 $mode       = 'client_credentials';
-$scope      = 'read';

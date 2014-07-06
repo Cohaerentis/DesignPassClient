@@ -25,11 +25,27 @@ if (file_exists('config.php')) {
     exit(1);
 }
 
-// Create Design Pass Client connection
-$pass = new DesignPassClient($api, $key, $secret, $redirect, $mode, $scope);
-if ($pass->authenticate()) {
-    wrout("Already authenticated : key($key), scope($scope)");
-    wrout('AccessToken : ' . $pass->oauth->token->accesstoken);
-} else {
-    wrout('ERROR : ' . $pass->lastError);
+if ($mode == 'client_credentials') {
+    $pass = new DesignPassClient($api, $key, $secret, $redirect, $mode, 'read');
+    if ($pass->authenticate()) {
+        wrout("Authenticated - READ : key($key), token({$pass->oauth->token->accesstoken})");
+    } else {
+        wrout('ERROR : ' . $pass->lastError);
+    }
+
+    $pass = new DesignPassClient($api, $key, $secret, $redirect, $mode, 'write');
+    if ($pass->authenticate()) {
+        wrout("Authenticated - WRITE : key($key), token({$pass->oauth->token->accesstoken})");
+    } else {
+        wrout('ERROR : ' . $pass->lastError);
+    }
+
+} else { // mode = authorization_code
+    $pass = new DesignPassClient($api, $key, $secret, $redirect, $mode, 'profile');
+    if ($pass->authenticate()) {
+        wrout("Authenticated - PROFILE : key($key), token({$pass->oauth->token->accesstoken})");
+    } else {
+        wrout('ERROR : ' . $pass->lastError);
+    }
+
 }
