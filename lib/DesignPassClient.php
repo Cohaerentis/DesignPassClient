@@ -55,7 +55,7 @@ class DesignPassClient {
         return false;
     }
 
-    public function request($url, $method = 'GET', $params = array()) {
+    public function request($url, $method = 'GET', $params = array(), $files = array()) {
         $url = trim($url);
         if (!preg_match('#^http(s)?://#', $url)) {
             $url = trim($url, '/');
@@ -63,6 +63,7 @@ class DesignPassClient {
         }
         $this->lastError = '';
         $this->lastErrorCode = '';
+        $params = $this->_parseParams($params, $files);
         if ($this->authenticate()) {
             $response = $this->oauth->api($url, $method, $params);
             return $this->_responseProcess($response);
@@ -84,5 +85,22 @@ class DesignPassClient {
         }
 
         return $result;
+    }
+
+    private function _parseParams($params, $files) {
+        if (!is_array($params)) $params = array();
+        if (empty($files) || !is_array($files)) return $params;
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        foreach ($files as $field => $file) {
+            if (is_string($file)) $file = array('tmp_name' => $file);
+            if (empty($file['tmp_name']) || !file_exists($file['tmp_name'])) continue;
+            $filepath = realpath($file['tmp_name']);
+            $mimetype = !empty($file['type']) ? $file['type'] : finfo_file($finfo, $filepath, FILEINFO_MIME_TYPE);
+            $name = !empty($file['name']) ? $file['name'] : basename($filepath);
+            $params[$field] = "@$filepath;filename=$name;type=$mimetype";
+            // $params[$field] = "@$filepath;type=$mimetype";
+            // $params['file'] = "@$filepath";
+        }
+        return $params;
     }
 }

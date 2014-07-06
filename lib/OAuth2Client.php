@@ -266,9 +266,9 @@ class OAuth2Client
     {
 // static $curlstderr = null;
 // if (empty($curlstderr)) $curlstderr = @fopen(wrlog::$path . '/curl_stderr.txt', wrlog::FOPEN_WRITE_CREATE);
-//        wrlog("OAuth2Client::request: $type url = " . var_export($url, true));
-//        wrlog('OAuth2Client::request: params = ' . var_export( $params, true ) );
-//        wrlog('OAuth2Client::request: headers = ' . var_export( $this->curl_header, true ) );
+// wrlog("OAuth2Client::request: $type url = " . var_export($url, true));
+// wrlog('OAuth2Client::request: params = ' . var_export( $params, true ) );
+// wrlog('OAuth2Client::request: headers = ' . var_export( $this->curl_header, true ) );
 
         if( $type == 'GET' ){
             if (!empty($params)) $url = $url . ( strpos( $url, '?' ) ? '&' : '?' ) . http_build_query( $params );
@@ -297,7 +297,8 @@ class OAuth2Client
             curl_setopt($ch, CURLOPT_POST, 1);
             if (!empty($params)) {
 // wrout('OAuth2Client::request: Setting POST params' );
-                if (is_array($params)) $params = http_build_query( $params );
+                // AEA - Do not use 'http_build_query' if you want to send files
+                // if (is_array($params)) $params = http_build_query( $params );
                 curl_setopt( $ch, CURLOPT_POSTFIELDS, $params );
             }
         }
@@ -307,7 +308,7 @@ class OAuth2Client
         $this->http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $this->http_info = array_merge($this->http_info, curl_getinfo($ch));
 
-//        wrlog('OAuth2Client::request: http_code = ' . var_export( $this->http_code, true ) );
+// wrlog('OAuth2Client::request: http_code = ' . var_export( $this->http_code, true ) );
 // if ($this->http_code >= 300)
 //     wrlog('OAuth2Client::request: http_info = ' . var_export( $this->http_info, true ) );
 //        wrlog('OAuth2Client::request: result = ' . var_export( $response, true ) );
