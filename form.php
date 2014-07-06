@@ -37,6 +37,7 @@ $params = array(
     'context_salesforce_campaign' => '701f0000000FxXa',
     'newsletter_signup' => 1,
     'newsletter_id' => 12,
+    // ...
 );
 
 $files = array(
@@ -44,6 +45,10 @@ $files = array(
     'file_portfolio'    => dirname(__FILE__) . '/sample_image.jpg',
     'file_cv'           => dirname(__FILE__) . '/sample_image.png',
     'file_image'        => dirname(__FILE__) . '/sample_image.gif',
+    // AEA - You can also bypass any file uploaded via browser
+    // Can't do it in this example because it is executed in CLI environtment,
+    // but here you have an example:
+    // 'file_image'        => $_FILES['image'];
 );
 
 // Create Design Pass Client connection
