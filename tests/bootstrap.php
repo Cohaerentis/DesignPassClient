@@ -20,12 +20,20 @@ wrlog::$enabled = true;
 wrlog::$path = dirname(__FILE__) . '/../logs';
 wrlog_request();
 
+wrout("API : $api");
+
 RequestTestCase::$read = new DesignPassClient($api, $key, $secret, $redirect, $mode, 'read');
 if (!RequestTestCase::$read->authenticate()) {
     echo 'READ ERROR : ' . RequestTestCase::$read->lastError;
+} else {
+    $token = RequestTestCase::$read->oauth->token->accesstoken;
+    wrout("READ : key($key), token({$token})");
 }
 
 RequestTestCase::$write = new DesignPassClient($api, $key, $secret, $redirect, $mode, 'write');
 if (!RequestTestCase::$write->authenticate()) {
     echo 'WRITE ERROR : ' . RequestTestCase::$write->lastError;
+} else {
+    $token = RequestTestCase::$write->oauth->token->accesstoken;
+    wrout("WRITE : key($key), token({$token})");
 }
