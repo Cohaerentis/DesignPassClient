@@ -32,11 +32,11 @@
  */
 
 class OAuthConsumer {
-    private static $tokens = array();
-    private static $nextid = 1;
+    public static $tokens = array();
+    public static $nextid = 1;
 
-    private $id = null;
-    private $errors = array();
+    public $id = null;
+    public $errors = array();
 
     public $provider = '';
     public $tokenurl = '';
@@ -56,12 +56,10 @@ class OAuthConsumer {
 
     public function save() {
         if (empty($this->id)) {
-
-        } else {
             $this->id = self::$nextid;
             self::$nextid++;
-            self::$tokens[$this->id] = &$this;
         }
+        self::$tokens[$this->id] = &$this;
         return true;
 
     }

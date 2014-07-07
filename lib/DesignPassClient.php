@@ -55,6 +55,16 @@ class DesignPassClient {
         return false;
     }
 
+    static public function accessToken($code, $state, $redirect_uri) {
+        // START : Workaround for non-persistance tokens
+        $token = new OAuthConsumer();
+        $token->state = $state;
+        $token->save();
+        // END : Workaround for non-persistance tokens
+
+        return OAuth::accessToken($code, $state, $redirect_uri);
+    }
+
     public function request($url, $method = 'GET', $params = array(), $files = array()) {
         $url = trim($url);
         if (!preg_match('#^http(s)?://#', $url)) {

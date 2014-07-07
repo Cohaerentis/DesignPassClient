@@ -175,13 +175,13 @@ class OAuth {
                     }
                     return true;
                 } else {
-                    return 'While getting accessToken.';
+                    throw new Exception("oAuth error while getting accessToken.");
                 }
             } else {
                 throw new Exception("oAuth version {$token->version} is not supported.");
             }
         }
-        return 'Invalid state.';
+        throw new Exception("oAuth error invalid state.");
     }
 
     static public function stateRevoke($state) {
