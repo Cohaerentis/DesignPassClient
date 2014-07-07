@@ -270,7 +270,7 @@ class OAuth {
             }
             $authUrl = $this->client->authorizeUrl(array('state' => $this->token->state));
             if ($this->followAuth) {
-                $code = $this->_followAuth($this->client->authorizeUrl(array('state' => $this->token->state)));
+                $code = $this->_followAuth($authUrl);
                 if (!empty($code) && $this->client->accessToken($code)) {
                     // Token retrieved
                     $this->_tokenSave();

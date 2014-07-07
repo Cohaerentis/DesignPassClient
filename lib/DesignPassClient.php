@@ -48,7 +48,7 @@ class DesignPassClient {
                 $this->lastError = 'Can not authenticate';
                 $this->lastErrorCode = 'ERROR_AUTH';
             } else  {
-                $this->lastError = 'Follow this link to authenticate : ' . $result;
+                $this->lastError = $result;
                 $this->lastErrorCode = 'ERROR_FOLLOW_LINK';
             }
         }
