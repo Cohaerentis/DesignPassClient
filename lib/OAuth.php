@@ -33,9 +33,21 @@ class OAuth {
     public $version = 2;
 
     /**
-     * @var OauthConsumer Model for persist token data
+     * @var OauthConsumer Model for persist token data or provided by user
      */
     public $token = null;
+
+    /**
+     * State generated for authorization_code
+     * @var string
+     */
+    public $state = '';
+
+    /**
+     * URL to redirect user when authorization is needed
+     * @var string
+     */
+    public $auth_url = '';
 
     /**
      * @var string Last error description message
@@ -114,17 +126,17 @@ class OAuth {
                     // Invalidate current token
                     $this->_isAuthenticated = false;
                     $this->token->accesstoken = '';
-                    if (!$this->token->save()) {
-                        $reason = var_export($token->getErrors(), true);
-                        throw new Exception("ERROR : Can not save OauthConsumer token. Reason : $reason");
+                    if ($this->authtype == 'client_credentials') {
+                        if (!$this->token->save()) {
+                            $reason = var_export($token->getErrors(), true);
+                            $this->lastError = "ERROR : Can not save OauthConsumer token. Reason : $reason";
+                            return false;
+                        }
                     }
                     // Try to get another token
                     $result = $this->authenticate();
                     if ($result === false) {
                         $this->lastError = 'ERROR : Invalid token and can not get another access token.';
-                        return false;
-                    } else if (is_string($result)) {
-                        $this->lastError = "ERROR : Invalid token, follow this link to authenticate: $result.";
                         return false;
                     } else if ($ntries > $this->maxRetries) {
                         $this->lastError = 'ERROR : Invalid token and max retries limit overflow.';
@@ -146,88 +158,62 @@ class OAuth {
         return false;
     }
 
-    static public function accessToken($code, $state, $redirect_uri) {
-        $state = preg_replace('[^a-f0-9]', '', $state);
-
-        $token = OauthConsumer::findByState($state);
-        if (!empty($token)) {
-            // Erase state, we can only use it once
-            $token->state = '';
-            if (!$token->save()) {
-                $reason = var_export($token->getErrors(), true);
-                throw new Exception("ERROR : Can not save OauthConsumer token. Reason : $reason");
-            }
-
-            if ($token->version == 2) {
-                $client = new OAuth2Client($token->clientid, $token->clientsecret);
-                $client->redirect_uri   = $redirect_uri;
-                $client->token_url      = $token->tokenurl;
-                $client->scope          = $token->scope;
-                $client->client_auth_header = true;
-                $client->curl_authenticate_method = 'GET';
-                if ($client->accessToken($code)) {
-                    $token->accesstoken     = $client->access_token;
-                    $token->refreshtoken    = $client->refresh_token;
-                    $token->expires         = $client->access_token_expires_at;
-                    if (!$token->save()) {
-                        $reason = var_export($token->getErrors(), true);
-                        throw new Exception("ERROR : Can not save OauthConsumer token. Reason : $reason");
-                    }
-                    return true;
-                } else {
-                    throw new Exception("oAuth error while getting accessToken.");
-                }
-            } else {
-                throw new Exception("oAuth version {$token->version} is not supported.");
-            }
-        }
-        throw new Exception("oAuth error invalid state.");
+    public function accessTokenGet() {
+        return $this->token;
     }
 
-    static public function stateRevoke($state) {
-        $state = preg_replace('[^a-f0-9]', '', $state);
-        $token = OauthConsumer::findByState($state);
-        if (!empty($token)) {
-            $token->state = '';
-            if (!$token->save()) {
-                $reason = var_export($token->getErrors(), true);
-                throw new Exception("ERROR : Can not save OauthConsumer token. Reason : $reason");
-            }
+    public function accessTokenRequest($code) {
+        if ($this->client->accessToken($code)) {
+            $this->token = new OAuthConsumer();
+            $this->token->provider      = $this->provider;
+            $this->token->clientid      = $this->client->client_id;
+            $this->token->scope         = $this->client->scope;
+            $this->token->version       = $this->version;
+            $this->token->accesstoken   = $this->client->access_token;
+            $this->token->refreshtoken  = $this->client->refresh_token;
+            $this->token->expires       = $this->client->access_token_expires_at;
+
+            $this->_isAuthenticated = true;
+        } else {
+            $this->lastError = $this->client->lastError;
+            return false;
         }
+
+        return $this->token;
+    }
+
+    public function accessTokenSet($token) {
+        if (!empty($token->accesstoken)) {
+            $this->token = $token;
+            $this->client->access_token = $this->token->accesstoken;
+            return true;
+        }
+        return false;
     }
 
     public function authenticate() {
-// if (empty($this->client)) wrout('OAuth::authenticate : Client is empty');
         if (empty($this->client)) return false;
         if ($this->_isAuthenticated) return true;
 
-        // Read/Create token information from DB
-        if (empty($this->token)) {
-// wrout('OAuth::authenticate : Empty token');
+        // Read/Create token information from DB only in client_credentials mode
+        if (empty($this->token) && ($this->authtype == 'client_credentials')) {
             // 1. Try to find token information in DB
             $this->token = OauthConsumer::find($this->client->client_id,
                                                $this->provider,
-                                               $this->authtype);
+                                               $this->client->scope);
             // 2. Create token information for this provider/clientid if necessary
             if (empty($this->token)) {
-// wrout('OAuth::authenticate : Creating token');
                 $this->token = new OauthConsumer();
                 $this->token->provider      = $this->provider;
-                $this->token->tokenurl      = $this->client->token_url;
-                $this->token->authorizeurl  = $this->client->authorize_url;
-                $this->token->apiurl        = $this->client->api_base_url;
                 $this->token->scope         = $this->client->scope;
-                $this->token->authtype      = $this->authtype;
                 $this->token->clientid      = $this->client->client_id;
-                $this->token->clientsecret  = $this->client->client_secret;
                 $this->token->version       = $this->version;
             }
         }
 
-// wrlog('Oauth::authenticate : token = ' . var_export($this->token, true));
         $now = time();
-        if (!empty($this->token->accesstoken) && !empty($this->token->expires) && ($this->token->expires > $now)) {
-// wrout('OAuth::authenticate : Have a valid accessToken');
+        if (!empty($this->token->accesstoken) &&
+            (empty($this->token->expires) || ($this->token->expires > $now)) ) {
             // A. We have a valid accesstoken
             $this->client->access_token = $this->token->accesstoken;
             $this->_isAuthenticated = true;
@@ -235,13 +221,12 @@ class OAuth {
             return true;
 
         } else {
-// wrout('OAuth::authenticate : Have an old accessToken');
             // B. We have an old accestoken, try to refresh it
             if (!empty($this->token->refreshtoken)) {
                 $this->client->refresh_token = $this->token->refreshtoken;
                 if ($this->client->refreshToken()) {
                     // B.1 Token renewed
-                    $this->_tokenSave();
+                    if (!$this->_tokenSave()) return false;
                     $this->_isAuthenticated = true;
 
                     return true;
@@ -251,40 +236,43 @@ class OAuth {
 
         // C. Get accestoken by authentication
         if ($this->authtype == 'client_credentials') {
-// wrout('OAuth::authenticate : Getting token by client_credentials');
             // C.1. Retrieve accesstoken by client_credentials grant_type
             if ($this->client->clientToken()) {
                 // Token retrieved
-                $this->_tokenSave();
+                if (!$this->_tokenSave()) return false;
                 $this->_isAuthenticated = true;
 
                 return true;
             }
-        } else { // authorization_code
-// wrout('OAuth::authenticate : Getting token by authorization code');
+        } else { // authorization_code, no token saved provided by
             // C.2. Show user authorization dialog if need
-            $this->token->state = $this->_stateGenerate();
-            if (!$this->token->save()) {
-                $reason = var_export($this->token->getErrors(), true);
-                throw new Exception("ERROR : Can not save OauthConsumer token. Reason : $reason");
-            }
-            $authUrl = $this->client->authorizeUrl(array('state' => $this->token->state));
+            // $this->token->state = $this->_stateGenerate();
+            $this->state = $this->_stateGenerate();
+            //if (!$this->token->save()) {
+            //    $reason = var_export($this->token->getErrors(), true);
+            //    throw new Exception("ERROR : Can not save OauthConsumer token. Reason : $reason");
+            // }
+            // $authUrl = $this->client->authorizeUrl(array('state' => $this->token->state));
+            $this->auth_url = $this->client->authorizeUrl(array('state' => $this->state));
             if ($this->followAuth) {
-                $code = $this->_followAuth($authUrl);
+                $code = $this->_followAuth($this->auth_url);
                 if (!empty($code) && $this->client->accessToken($code)) {
                     // Token retrieved
-                    $this->_tokenSave();
+                    // Do not save token, we are in authorization code mode
+                    // $this->_tokenSave();
                     $this->_isAuthenticated = true;
+
+                    $this->state = '';
+                    $this->auth_url = '';
 
                     return true;
                 }
             }
 
             // No token, get it manually
-            if (!$this->_isAuthenticated) return $authUrl;
+            if (!$this->_isAuthenticated) return $this->auth_url;
         }
 
-// wrout('OAuth::authenticate : No more options to get a valid token');
         return false;
     }
 
@@ -293,11 +281,15 @@ class OAuth {
             $this->token->accesstoken     = $this->client->access_token;
             $this->token->refreshtoken    = $this->client->refresh_token;
             $this->token->expires         = $this->client->access_token_expires_at;
-            if (!$this->token->save()) {
-                $reason = var_export($this->token->getErrors(), true);
-                throw new Exception("ERROR : Can not save OauthConsumer token. Reason : $reason");
-            }
+            if ($this->token->save()) return true;
+
+            $reason = var_export($this->token->getErrors(), true);
+            $this->lastError = "ERROR : Can not save OauthConsumer token. Reason : $reason";
+            return false;
         }
+
+        $this->lastError = 'ERROR : No token to save';
+        return false;
     }
 
     private function _stateGenerate() {

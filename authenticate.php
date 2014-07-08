@@ -45,7 +45,13 @@ if ($mode == 'client_credentials') {
     if ($pass->authenticate()) {
         wrout("Authenticated - PROFILE : key($key), token({$pass->oauth->token->accesstoken})");
     } else {
-        wrout('ERROR : ' . $pass->lastError);
+        if ($pass->lastErrorCode == 'ERROR_FOLLOW_LINK') {
+            wrout('STATE    : ' . $pass->stateGet());
+            wrout('AUTH URL : ' . $pass->authURLGet());
+
+        } else {
+            wrout('ERROR : ' . $pass->lastError);
+        }
     }
 
 }

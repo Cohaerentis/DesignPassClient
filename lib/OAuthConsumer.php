@@ -14,14 +14,8 @@
  * CREATE TABLE IF NOT EXISTS `oauth_consumer` (
  *     `id`            bigint(20)      NOT NULL AUTO_INCREMENT,
  *     `provider`      varchar(40)     COLLATE utf8_unicode_ci NOT NULL,
- *     `tokenurl`      varchar(100)    COLLATE utf8_unicode_ci NOT NULL,
- *     `authorizeurl`  varchar(100)    COLLATE utf8_unicode_ci NOT NULL,
- *     `apiurl`        varchar(100)    COLLATE utf8_unicode_ci NOT NULL,
  *     `scope`         varchar(100)    COLLATE utf8_unicode_ci DEFAULT NULL,
- *     `authtype`      varchar(20)     COLLATE utf8_unicode_ci NOT NULL,
  *     `clientid`      varchar(80)     COLLATE utf8_unicode_ci NOT NULL,
- *     `clientsecret`  varchar(80)     COLLATE utf8_unicode_ci NOT NULL,
- *     `state`         varchar(40)     COLLATE utf8_unicode_ci DEFAULT NULL,
  *     `accesstoken`   varchar(256)    COLLATE utf8_unicode_ci DEFAULT NULL,
  *     `refreshtoken`  varchar(256)    COLLATE utf8_unicode_ci DEFAULT NULL,
  *     `expires`       bigint(11)      NULL DEFAULT NULL,
@@ -32,25 +26,19 @@
  */
 
 class OAuthConsumer {
-    public static $tokens = array();
-    public static $nextid = 1;
+    private static $tokens = array();
+    private static $nextid = 1;
 
-    public $id = null;
-    public $errors = array();
+    private $id = null;
+    private $errors = array();
 
     public $provider = '';
-    public $tokenurl = '';
-    public $authorizeurl = '';
-    public $apiurl = '';
     public $scope = '';
-    public $authtype = '';
     public $clientid = '';
-    public $clientsecret = '';
     public $version = 2;
     public $expires = 0;
     public $accesstoken = '';
     public $refreshtoken = '';
-    public $state = '';
 
     public function __construct() { }
 
@@ -68,22 +56,13 @@ class OAuthConsumer {
         return $this->errors;
     }
 
-    public static function findByState($state) {
-        // Try to find token by state
-        // TODO : Make it persistent using SQLite, MySQL, ...
-        foreach (self::$tokens as &$token) {
-            if ($token->state == $state) return $token;
-        }
-        return false;
-    }
-
-    public static function find($clientid, $provider, $authtype) {
-        // Try to find token by clientid, provider and authtype
+    public static function find($clientid, $provider, $scope) {
+        // Try to find token by clientid, provider and scope
         // TODO : Make it persistent using SQLite, MySQL, ...
         foreach (self::$tokens as &$token) {
             if ( ($token->clientid == $clientid) &&
                  ($token->provider == $provider) &&
-                 ($token->authtype == $authtype) ) return $token;
+                 ($token->scope == $scope) ) return $token;
         }
         return false;
     }

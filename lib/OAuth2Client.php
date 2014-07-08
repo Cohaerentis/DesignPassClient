@@ -45,6 +45,8 @@ class OAuth2Client
 
     public $http_code             = '';
     public $http_info             = '';
+    public $lastErrorCode         = 0;
+    public $lastError             = '';
 
     //--
 
@@ -90,6 +92,8 @@ class OAuth2Client
             $params['client_secret'] = $this->client_secret;
         }
 
+// wrout('OAuth2Client::accessToken : url = ' . var_export($this->token_url, true));
+// wrout('OAuth2Client::accessToken : params = ' . var_export($params, true));
         $response = $this->request( $this->token_url, $params, $this->curl_authenticate_method );
         $response = $this->parseRequestResult( $response );
 
@@ -104,6 +108,7 @@ class OAuth2Client
             $this->access_token_expires_at = time() + $response->expires_in;
         }
 
+// wrout('OAuth2Client::accessToken : response = ' . var_export($response, true));
         return !empty( $response->access_token );
     }
 
@@ -175,34 +180,6 @@ class OAuth2Client
         return !empty( $response->access_token );
     }
 
-    /* AEA - This function has no sense
-    public function authenticated()
-    {
-        if ( $this->access_token ){
-            if ( $this->token_info_url && $this->refresh_token ){
-                // check if this access token has expired,
-                $tokeninfo = $this->tokenInfo( $this->access_token );
-
-                // if yes, access_token has expired, then ask for a new one
-                if( $tokeninfo && isset( $tokeninfo->error ) ){
-                    $response = $this->refreshToken( $this->refresh_token );
-
-                    // if wrong response
-                    if( ! isset( $response->access_token ) || ! $response->access_token ){
-                        throw new Exception( 'The Authorization Service has return an invalid response while requesting a new access token. given up!' );
-                    }
-
-                    // set new access_token
-                    $this->access_token = $response->access_token;
-                }
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-    */
     /**
     * Format and sign an oauth for provider api
     */
@@ -320,7 +297,13 @@ class OAuth2Client
 
     private function parseRequestResult( $result )
     {
-        if( $decoded = json_decode( $result ) ) return $decoded;
+        if( $decoded = json_decode( $result ) ) {
+            if (!empty($decoded->status) && ($decoded->status == 'ERROR')) {
+                $this->lastErrorCode = $decoded->errno;
+                $this->lastError = $decoded->error;
+            }
+            return $decoded;
+        }
 
         parse_str( $result, $ouput );
 

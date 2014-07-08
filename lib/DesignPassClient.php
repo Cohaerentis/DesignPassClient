@@ -43,26 +43,54 @@ class DesignPassClient {
     public function authenticate() {
         if (!empty($this->oauth)) {
             $result = $this->oauth->authenticate();
-            if ($result === true)           return true;
-            else if ($result === false)     {
-                $this->lastError = 'Can not authenticate';
-                $this->lastErrorCode = 'ERROR_AUTH';
-            } else  {
-                $this->lastError = $result;
-                $this->lastErrorCode = 'ERROR_FOLLOW_LINK';
+            if ($result === true) {
+                // Already authenticated
+                return true;
+            } else {
+                // If authorization_code, we need user authorization
+                // In this case, you will need to call:
+                // - authURLGet() to get authorization URL where redirect user
+                // - stateGet() to save in DB or SESSION for checking when oAuth server callback you with state and code
+                if ( ($this->oauth->authtype == 'authorization_code') &&
+                     !empty($this->oauth->state) &&
+                     !empty($this->oauth->auth_url) ) {
+                    $this->lastError = 'We need user authorization. Call authURLGet() to get url for redirect';
+                    $this->lastErrorCode = 'ERROR_FOLLOW_LINK';
+                // Or there is another authentication error
+                } else {
+                    $this->lastError = 'Can not authenticate';
+                    $this->lastErrorCode = 'ERROR_AUTH';
+                }
             }
         }
         return false;
     }
 
-    static public function accessToken($code, $state, $redirect_uri) {
-        // START : Workaround for non-persistance tokens
-        $token = new OAuthConsumer();
-        $token->state = $state;
-        $token->save();
-        // END : Workaround for non-persistance tokens
+    public function stateGet() {
+        return $this->oauth->state;
+    }
 
-        return OAuth::accessToken($code, $state, $redirect_uri);
+    public function authURLGet() {
+        return $this->oauth->auth_url;
+    }
+
+    public function accessTokenGet() {
+        return $this->oauth->accessTokenGet();
+    }
+
+    // Used only in authorization_code mode
+    public function accessTokenRequest($code) {
+        $token = $this->oauth->accessTokenRequest($code);
+        if (empty($token)) {
+            $this->lastError = $this->oauth->lastError;
+            $this->lastErrorCode = 'OAUTH_ACCESS_TOKEN';
+        }
+        return $token;
+    }
+
+    // Used only in authorization_code mode
+    public function accessTokenSet($token) {
+        $this->oauth->accessTokenSet($token);
     }
 
     public function request($url, $method = 'GET', $params = array(), $files = array()) {
@@ -89,6 +117,9 @@ class DesignPassClient {
         } else if ($status == 'ERROR') {
             $this->lastError = !empty($response->error) ? $response->error : 'Unknown error';
             $this->lastErrorCode = !empty($response->errno) ? $response->errno : 'ERROR_UNKNOWN';
+        } else if (!empty($this->oauth->lastError)) {
+            $this->lastError = $this->oauth->lastError;
+            $this->lastErrorCode = 'ERROR_NO_AUTH';
         } else {
             $this->lastError = 'No response from DesignPass';
             $this->lastErrorCode = 'ERROR_NO_RESPONSE';
