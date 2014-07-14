@@ -37,6 +37,10 @@ $params = array(
     'context_salesforce_campaign' => '701f0000000FxXa',
     'newsletter_signup' => 1,
     'newsletter_id' => 12,
+    'user_interest' => array(
+        'Noticias',
+        'Moda',
+    ),
     // ...
 );
 
