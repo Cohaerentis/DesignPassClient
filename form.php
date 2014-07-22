@@ -27,7 +27,7 @@ if (file_exists('config.php')) {
 
 $params = array(
     'type' => 'general',
-    'email' => 'contacto+pruebas@teacchnova.com',
+    'email' => 'contacto+pruebas@teachnova.com',
     'user_firstname' => 'Usuario',
     'user_lastname' => 'de Pruebas',
     'user_address' => 'Mi calle',
