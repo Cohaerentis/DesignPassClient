@@ -197,11 +197,11 @@ class OAuth2Client
         $response = null;
 
         switch( $method ){
-            case 'GET'  : $response = $this->request( $url, $parameters, 'GET'  ); break;
             case 'POST' :
                 // $this->curl_header[] = 'Content-Type: application/x-www-form-urlencoded';
                 $response = $this->request( $url, $parameters, 'POST' );
                 break;
+            default  : $response = $this->request( $url, $parameters, $method  ); break;
         }
 
         if ($response && $this->decode_json) {
@@ -272,10 +272,11 @@ class OAuth2Client
             curl_setopt( $ch, CURLOPT_PROXY        , $this->curl_proxy);
         }
 
-        if( $type == 'POST' ){
+
+        if ($type == 'POST') {
             curl_setopt($ch, CURLOPT_POST, 1);
+
             if (!empty($params)) {
-// wrout('OAuth2Client::request: Setting POST params' );
                 // AEA - Do not use 'http_build_query' if you want to send files
                 // if (is_array($params)) $params = http_build_query( $params );
                 if (is_array($params)) {
@@ -291,9 +292,22 @@ class OAuth2Client
                     }
                     $params = $new;
                 }
-// wrout('OAuth2Client::request: POST params = ' . var_export( $params, true ) );
-                curl_setopt( $ch, CURLOPT_POSTFIELDS, $params );
+            } else {
+                $params = '';
             }
+            curl_setopt( $ch, CURLOPT_POSTFIELDS, $params );
+        }
+
+        if ($type == 'PUT') {
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
+
+            if (!empty($params)) {
+                // AEA - Do not use 'http_build_query' if you want to send files
+                if (is_array($params)) $params = http_build_query( $params );
+            } else {
+                $params = '';
+            }
+            curl_setopt( $ch, CURLOPT_POSTFIELDS, $params );
         }
 
         $response = curl_exec($ch);
