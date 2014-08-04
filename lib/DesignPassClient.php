@@ -138,10 +138,22 @@ class DesignPassClient {
             $filepath = realpath($file['tmp_name']);
             $mimetype = !empty($file['type']) ? $file['type'] : finfo_file($finfo, $filepath, FILEINFO_MIME_TYPE);
             $name = !empty($file['name']) ? $file['name'] : basename($filepath);
-            $params[$field] = "@$filepath;filename=$name;type=$mimetype";
-            // $params[$field] = "@$filepath;type=$mimetype";
-            // $params['file'] = "@$filepath";
+            // Miguel A. Montañes - Support new PHP 5.5 Curl Upload files
+            // $params[$field] = "@$filepath;filename=$name;type=$mimetype";
+            $params[$field] = $this->_get_file_params($filepath, $mimetype, $name);
         }
         return $params;
     }
+
+    // Miguel A. Montañes - Support new PHP 5.5 Curl Upload files
+    private function _get_file_params($filepath, $mimetype, $name ) {
+        if (function_exists('curl_file_create')) {
+            // if current PHP version is 5.5 or later
+            $file_params = curl_file_create($filepath, $mimetype, $name);
+        } else {
+            $file_params = "@$filepath;filename=$name;type=$mimetype";
+        }
+        return $file_params;
+    }
+
 }
